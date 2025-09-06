@@ -66,6 +66,9 @@ importers:
       playwright:
         specifier: ^1.55.0
         version: 1.55.0
+      prettier:
+        specifier: ^3.6.2
+        version: 3.6.2
       storybook:
         specifier: ^9.1.5
         version: 9.1.5(@testing-library/dom@10.4.1)(prettier@3.6.2)(vite@7.1.4)
@@ -3251,8 +3254,7 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier@3.6.2:
-    optional: true
+  prettier@3.6.2: {}
 
   pretty-format@27.5.1:
     dependencies:
