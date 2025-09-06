@@ -7,6 +7,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 import { globalIgnores } from 'eslint/config';
+import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default tseslint.config(
   [
@@ -18,6 +19,7 @@ export default tseslint.config(
         tseslint.configs.recommended,
         reactHooks.configs['recommended-latest'],
         reactRefresh.configs.vite,
+        eslintConfigPrettier, // NOTE: prettier는 마지막에 추가하여 다른 설정과의 충돌 방지
       ],
       languageOptions: {
         ecmaVersion: 2020,
