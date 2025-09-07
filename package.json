@@ -1,8 +1,15 @@
 {
   "name": "headless-tree",
-  "private": true,
   "version": "0.0.0",
   "type": "module",
+  "bugs": "https://github.com/yoonminsang/headless-tree/issues",
+  "homepage": "https://github.com/yoonminsang/headless-tree#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yoonminsang/headless-tree.git"
+  },
+  "license": "MIT",
+  "sideEffects": false,
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
