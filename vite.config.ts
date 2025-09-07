@@ -37,6 +37,22 @@ export default defineConfig({
           setupFiles: ['.storybook/vitest.setup.ts'],
         },
       },
+      {
+        extends: true,
+        test: {
+          globals: true,
+          name: 'unit-tests',
+          include: ['**/*.{test,spec}.{js,ts,tsx}'], // 일반 테스트 파일들
+          exclude: [
+            '**/node_modules/**', // node_modules 제외
+            '**/*.stories.{js,ts,tsx}', // 스토리 파일 제외
+            '**/dist/**', // 빌드 결과물 제외
+            '**/build/**', // 빌드 결과물 제외
+          ],
+          environment: 'jsdom', // React 컴포넌트 테스트시 필요
+          setupFiles: ['./src/test/setup.ts'],
+        },
+      },
     ],
   },
 });
