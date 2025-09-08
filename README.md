@@ -16,15 +16,15 @@ A flexible, headless React tree component library that provides powerful tree st
 ## Installation
 
 ```bash
-npm install @yoonminsang/headless-tree
+npm install @kryoonminsang/headless-tree
 ```
 
 ```bash
-yarn add @yoonminsang/headless-tree
+yarn add @kryoonminsang/headless-tree
 ```
 
 ```bash
-pnpm add @yoonminsang/headless-tree
+pnpm add @kryoonminsang/headless-tree
 ```
 
 ## Usage
@@ -34,7 +34,7 @@ pnpm add @yoonminsang/headless-tree
 The simplest way to use headless-tree with custom data types:
 
 ```tsx
-import { Tree, TreeData, BasicTreeItem } from '@yoonminsang/headless-tree';
+import { Tree, TreeData, BasicTreeItem } from '@kryoonminsang/headless-tree';
 
 // Define your custom data type
 interface FileItem {
@@ -91,7 +91,7 @@ function FileTree() {
 When you need more control over tree state:
 
 ```tsx
-import { useTreeState, Tree } from '@yoonminsang/headless-tree';
+import { useTreeState, Tree } from '@kryoonminsang/headless-tree';
 
 function ControlledTree() {
   const { tree, open, close, toggleOpen, openAll, closeAll } = useTreeState({
@@ -115,7 +115,7 @@ function ControlledTree() {
 For maximum control with direct tree manipulation:
 
 ```tsx
-import { flattenTree, useTreeState } from '@yoonminsang/headless-tree';
+import { flattenTree, useTreeState } from '@kryoonminsang/headless-tree';
 
 function CustomFlatTree() {
   const { tree, toggleOpen } = useTreeState({ initialTree: treeData });
@@ -147,7 +147,7 @@ function CustomFlatTree() {
 This library is fully typed with TypeScript. All types are exported and can be imported:
 
 ```tsx
-import type { TreeData, BasicTreeItem, RenderItemParams, TreeItemId } from '@yoonminsang/headless-tree';
+import type { TreeData, BasicTreeItem, RenderItemParams, TreeItemId } from '@kryoonminsang/headless-tree';
 ```
 
 For detailed type definitions, please refer to the source code or your IDE's IntelliSense.
