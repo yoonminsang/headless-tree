@@ -87,7 +87,7 @@ jobs:
           fi
 
           # Create release notes
-          cat > release_notes.md << 'EOF'
+          cat > release_notes.md << EOF
           ## What's Changed
 
           $COMMITS
