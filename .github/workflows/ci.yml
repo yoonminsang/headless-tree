@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: ['*']
+  pull_request:
+    branches: ['*']
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: 22.17.1
+
+jobs:
+  ci-checks:
+    runs-on: ubuntu-latest
+    name: CI Checks
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: |
+          VERSION=$(cat package.json | jq -r '.devDependencies.playwright')
+          if [ "$VERSION" == "null" ]; then
+            echo "❌ Playwright version not found in package.json devDependencies"
+            exit 1
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "🎭 Found Playwright version: $VERSION"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers if needed
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "🎭 Installing Playwright browsers..."
+          pnpm exec playwright install --with-deps chromium
+          echo "✅ Playwright browsers installed"
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
