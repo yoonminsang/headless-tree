@@ -43,8 +43,7 @@ jobs:
 
   publish:
     needs: check-version
-    # Temporarily removed for manual testing
-    # if: needs.check-version.outputs.version-changed == 'true'
+    if: needs.check-version.outputs.version-changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -67,7 +66,7 @@ jobs:
         run: pnpm build
 
       - name: Publish to npm
-        run: pnpm publish --no-git-checks --access public
+        run: pnpm publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
