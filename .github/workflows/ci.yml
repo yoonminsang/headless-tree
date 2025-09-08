@@ -34,8 +34,8 @@ jobs:
       - name: Get Playwright version
         id: playwright-version
         run: |
-          VERSION=$(cat package.json | jq -r '.devDependencies.playwright')
-          if [ "$VERSION" == "null" ]; then
+          VERSION=$(cat package.json | jq -r '.devDependencies.playwright' | sed 's/[^0-9.]//g')
+          if [ -z "$VERSION" ]; then
             echo "❌ Playwright version not found in package.json devDependencies"
             exit 1
           fi
