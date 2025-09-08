@@ -1,6 +1,6 @@
 {
   "name": "@yoonminsang/headless-tree",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Headless tree component for React",
   "keywords": [
     "react",
