@@ -12,7 +12,8 @@
   "sideEffects": false,
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && tsup",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest",
     "prettier": "prettier . --write",
