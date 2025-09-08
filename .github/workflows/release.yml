@@ -43,7 +43,8 @@ jobs:
 
   publish:
     needs: check-version
-    if: needs.check-version.outputs.version-changed == 'true'
+    # Temporarily removed for manual testing
+    # if: needs.check-version.outputs.version-changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
