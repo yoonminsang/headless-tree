@@ -1,5 +1,13 @@
 import { useVirtualizer, type Virtualizer } from '@tanstack/react-virtual';
-import { forwardRef, useImperativeHandle, useMemo, useRef, type ReactElement, type Ref } from 'react';
+import {
+  forwardRef,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  type ComponentPropsWithoutRef,
+  type ReactElement,
+  type Ref,
+} from 'react';
 import { flattenTree } from './flattenTree';
 import type { BasicTreeItem, TreeProps } from './types';
 import { useTreeState } from './useTreeState';
@@ -8,7 +16,9 @@ export type VirtualizedTreeRef<CustomData extends BasicTreeItem> = ReturnType<ty
   virtualizer: Virtualizer<HTMLDivElement, Element>;
 };
 
-export interface VirtualizedTreeProps<CustomData extends BasicTreeItem> extends TreeProps<CustomData> {
+export interface VirtualizedTreeProps<CustomData extends BasicTreeItem> 
+  extends TreeProps<CustomData>, 
+    Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
   /** Height of the virtualized container */
   height: number | string;
   /** Estimated size of each item in pixels */
@@ -19,7 +29,16 @@ export interface VirtualizedTreeProps<CustomData extends BasicTreeItem> extends 
 
 /** @description Headless Virtualized Tree Component */
 function VirtualizedTreeComponent<T extends BasicTreeItem>(
-  { initialTree, options, renderItem, height, estimateSize, overscan = 5 }: VirtualizedTreeProps<T>,
+  {
+    initialTree,
+    options,
+    renderItem,
+    height,
+    estimateSize,
+    overscan = 5,
+    style,
+    ...containerProps
+  }: VirtualizedTreeProps<T>,
   ref: Ref<VirtualizedTreeRef<T>>
 ) {
   const { tree, open, close, toggleOpen, openAll, closeAll } = useTreeState({ initialTree, options });
@@ -50,9 +69,11 @@ function VirtualizedTreeComponent<T extends BasicTreeItem>(
   return (
     <div
       ref={parentRef}
+      {...containerProps}
       style={{
         height,
         overflow: 'auto',
+        ...style,
       }}
     >
       <div
