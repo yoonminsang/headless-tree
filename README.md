@@ -3,7 +3,8 @@
 A flexible, headless React tree component library that provides powerful tree state management with render props pattern.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
-[![npm version](https://badge.fury.io/js/headless-tree.svg)](https://badge.fury.io/js/headless-tree)
+[![npm version](https://img.shields.io/npm/v/@kryoonminsang/headless-tree.svg)](https://www.npmjs.com/package/@kryoonminsang/headless-tree)
+[![npm downloads](https://img.shields.io/npm/dm/@kryoonminsang/headless-tree.svg)](https://www.npmjs.com/package/@kryoonminsang/headless-tree)
 
 ## Features
 
