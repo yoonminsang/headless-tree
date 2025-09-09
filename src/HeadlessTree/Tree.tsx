@@ -3,9 +3,8 @@ import { flattenTree } from './flattenTree';
 import type { BasicTreeItem, TreeProps } from './types';
 import { useTreeState } from './useTreeState';
 
-export type TreeRef<T extends BasicTreeItem> = ReturnType<typeof useTreeState<T>>;
+export type TreeRef<CustomData extends BasicTreeItem> = ReturnType<typeof useTreeState<CustomData>>;
 
-/** @description Headless Tree Component */
 function TreeComponent<T extends BasicTreeItem>(
   { initialTree, options, renderItem }: TreeProps<T>,
   ref: Ref<TreeRef<T>>

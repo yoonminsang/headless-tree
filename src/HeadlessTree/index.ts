@@ -4,3 +4,5 @@ export type { TreeRef } from './Tree';
 export type * from './types';
 export { useTreeState } from './useTreeState';
 export { getAllDescendantIds, getPath } from './utils';
+export { VirtualizedTree } from './VirtualizedTree';
+export type { VirtualizedTreeProps, VirtualizedTreeRef } from './VirtualizedTree';

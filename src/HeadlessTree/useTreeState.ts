@@ -1,64 +1,104 @@
-import { produce } from 'immer';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { logError } from '../internal/logError';
 import { useDidUpdate } from '../internal/useDidUpdate';
 import type { BasicTreeItem, TreeData, TreeItemId, TreeProps } from './types';
 
-/** @description Manage the state of a tree. */
+// Helper function to extract opened IDs from tree items
+const extractOpenedIds = <T extends BasicTreeItem>(items: Record<TreeItemId, T>): Set<TreeItemId> => {
+  const openedIds = new Set<TreeItemId>();
+  Object.entries(items).forEach(([id, item]) => {
+    if (item.isOpened) {
+      openedIds.add(id);
+    }
+  });
+  return openedIds;
+};
+
+/** @description Manage the state of a tree with separated open/close state for better performance. */
 export const useTreeState = <CustomData extends BasicTreeItem>({
   initialTree,
   options,
 }: Pick<TreeProps<CustomData>, 'initialTree' | 'options'>) => {
-  const [tree, setTree] = useState<TreeData<CustomData>>(initialTree);
+  const [baseTree, setBasicTree] = useState<TreeData<CustomData>>(initialTree);
+  const [openedIds, setOpenedIds] = useState<Set<TreeItemId>>(() => extractOpenedIds(initialTree.items));
 
-  const changeIsOpenedState = useCallback((id: TreeItemId, value: boolean) => {
-    setTree(
-      produce((state) => {
-        if (!state.items[id]) {
-          logError(new Error('[useTreeState] Invalid item ID'), {
-            id,
-            availableIds: Object.keys(state.items),
-          });
-          return;
-        }
-        state.items[id].isOpened = value;
-      })
-    );
-  }, []);
+  // Merge base tree with open state for rendering
+  const tree = useMemo<TreeData<CustomData>>(() => {
+    const items: Record<TreeItemId, CustomData> = {};
+    Object.entries(baseTree.items).forEach(([id, item]) => {
+      items[id] = { ...item, isOpened: openedIds.has(id) };
+    });
+    return { rootIds: baseTree.rootIds, items };
+  }, [baseTree, openedIds]);
 
-  const changeAllIsOpenedState = useCallback((value: boolean) => {
-    setTree(
-      produce((state) => {
-        Object.keys(state.items).forEach((id) => {
-          state.items[id].isOpened = value;
+  const toggleOpen = useCallback(
+    (id: TreeItemId) => {
+      if (!baseTree.items[id]) {
+        logError(new Error('[useTreeState] Invalid item ID'), {
+          id,
+          availableIds: Object.keys(baseTree.items),
         });
-      })
-    );
-  }, []);
+        return;
+      }
 
-  const open = useCallback((id: TreeItemId) => changeIsOpenedState(id, true), [changeIsOpenedState]);
-  const close = useCallback((id: TreeItemId) => changeIsOpenedState(id, false), [changeIsOpenedState]);
-  const toggleOpen = useCallback((id: TreeItemId) => {
-    setTree(
-      produce((state) => {
-        if (!state.items[id]) {
-          logError(new Error('[useTreeState] Invalid item ID'), {
-            id,
-            availableIds: Object.keys(state.items),
-          });
-          return;
+      setOpenedIds((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(id)) {
+          newSet.delete(id);
+        } else {
+          newSet.add(id);
         }
-        state.items[id].isOpened = !state.items[id].isOpened;
-      })
-    );
+        return newSet;
+      });
+    },
+    [baseTree.items]
+  );
+
+  const open = useCallback(
+    (id: TreeItemId) => {
+      if (!baseTree.items[id]) {
+        logError(new Error('[useTreeState] Invalid item ID'), {
+          id,
+          availableIds: Object.keys(baseTree.items),
+        });
+        return;
+      }
+      setOpenedIds((prev) => new Set(prev).add(id));
+    },
+    [baseTree.items]
+  );
+
+  const close = useCallback(
+    (id: TreeItemId) => {
+      if (!baseTree.items[id]) {
+        logError(new Error('[useTreeState] Invalid item ID'), {
+          id,
+          availableIds: Object.keys(baseTree.items),
+        });
+        return;
+      }
+      setOpenedIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    },
+    [baseTree.items]
+  );
+
+  const openAll = useCallback(() => {
+    setOpenedIds(new Set(Object.keys(baseTree.items)));
+  }, [baseTree.items]);
+
+  const closeAll = useCallback(() => {
+    setOpenedIds(new Set());
   }, []);
-  const openAll = useCallback(() => changeAllIsOpenedState(true), [changeAllIsOpenedState]);
-  const closeAll = useCallback(() => changeAllIsOpenedState(false), [changeAllIsOpenedState]);
 
   useDidUpdate(() => {
     if (options?.syncWithInitialTree) {
-      setTree(initialTree);
+      setOpenedIds(extractOpenedIds(initialTree.items));
+      setBasicTree(initialTree);
     }
   }, [initialTree, options?.syncWithInitialTree]);
 

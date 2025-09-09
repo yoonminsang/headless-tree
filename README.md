@@ -8,10 +8,12 @@ A flexible, headless React tree component library that provides powerful tree st
 ## Features
 
 - 🎯 **Headless Design** - Complete control over rendering and styling
-- 🔧 **Flexible API** - Use the `Tree` component or build custom solutions with `useTreeState`, `flattenTree`
+- 🔧 **Flexible API** - Use `Tree`, `VirtualizedTree` components or build custom solutions with `useTreeState`, `flattenTree`
 - 📦 **TypeScript Support** - Fully typed for better developer experience
 - 🚀 **Performance** - Efficient tree flattening and state management
+- ⚡ **Virtualization** - Handle massive datasets (300,000+ items) with smooth scrolling performance
 - 🎨 **Render Props** - Flexible rendering with full access to tree state
+- 🌳 **Deep Nesting** - Support for deeply nested tree structures (10+ levels)
 
 ## Installation
 
@@ -27,119 +29,162 @@ yarn add @kryoonminsang/headless-tree
 pnpm add @kryoonminsang/headless-tree
 ```
 
-## Usage
+## Quick Start
 
-### 1. Basic Tree Component
-
-The simplest way to use headless-tree with custom data types:
+### Basic Tree
 
 ```tsx
-import { Tree, TreeData, BasicTreeItem } from '@kryoonminsang/headless-tree';
+import { Tree } from '@kryoonminsang/headless-tree';
 
-// Define your custom data type
+<Tree
+  initialTree={treeData}
+  renderItem={({ item, depth, toggleOpenState }) => (
+    <div style={{ paddingLeft: depth * 20 }}>
+      <button onClick={toggleOpenState}>{item.isOpened ? '📂' : '📁'}</button>
+      {item.customData.name}
+    </div>
+  )}
+/>;
+```
+
+### Virtualized Tree (for large datasets)
+
+```tsx
+import { VirtualizedTree } from '@kryoonminsang/headless-tree';
+
+<VirtualizedTree
+  initialTree={largeTreeData}
+  height="400px"
+  estimateSize={() => 32}
+  renderItem={({ item, depth, toggleOpenState }) => (
+    <div style={{ paddingLeft: depth * 16, height: 32 }}>
+      <button onClick={toggleOpenState}>{item.isOpened ? '📂' : '📁'}</button>
+      {item.customData.name}
+    </div>
+  )}
+/>;
+```
+
+### With Controls
+
+```tsx
+import { useRef } from 'react';
+import { Tree, TreeRef } from '@kryoonminsang/headless-tree';
+
+function ControlledTree() {
+  const treeRef = useRef<TreeRef>(null);
+
+  return (
+    <>
+      <button onClick={() => treeRef.current?.openAll()}>
+        Expand All
+      </button>
+      <Tree ref={treeRef} initialTree={treeData} renderItem={...} />
+    </>
+  );
+}
+```
+
+## Data Structure
+
+```tsx
 interface FileItem {
   name: string;
   type: 'file' | 'folder';
-  size?: number;
 }
 
-// Create tree data with your custom type
-const treeData: TreeData<BasicTreeItem<FileItem>> = {
+const treeData = {
   rootIds: ['1', '2'],
   items: {
     '1': {
       id: '1',
-      children: ['1-1', '1-2'],
+      children: ['1-1'],
       customData: { name: 'src', type: 'folder' },
-    },
-    '2': {
-      id: '2',
-      children: [],
-      customData: { name: 'package.json', type: 'file', size: 1234 },
     },
     '1-1': {
       id: '1-1',
       children: [],
-      customData: { name: 'index.ts', type: 'file', size: 567 },
+      customData: { name: 'index.ts', type: 'file' },
     },
-    '1-2': {
-      id: '1-2',
+    '2': {
+      id: '2',
       children: [],
-      customData: { name: 'utils.ts', type: 'file', size: 890 },
+      customData: { name: 'package.json', type: 'file' },
     },
   },
 };
-
-function FileTree() {
-  return (
-    <Tree
-      initialTree={treeData}
-      renderItem={({ item, depth, toggleOpenState }) => (
-        <div style={{ paddingLeft: depth * 20 }}>
-          <button onClick={toggleOpenState}>{item.children.length > 0 ? (item.isOpened ? '📂' : '📁') : '📄'}</button>
-          <span>{item.customData.name}</span>
-          {item.customData.size && <small> ({item.customData.size} bytes)</small>}
-        </div>
-      )}
-    />
-  );
-}
 ```
 
-### 2. Using useTreeState Hook
+## API Reference
 
-When you need more control over tree state:
+### Components
+
+#### Tree
+
+Basic tree component for standard use cases.
 
 ```tsx
-import { useTreeState, Tree } from '@kryoonminsang/headless-tree';
-
-function ControlledTree() {
-  const { tree, open, close, toggleOpen, openAll, closeAll } = useTreeState({
-    initialTree: treeData,
-  });
-
-  return (
-    <div>
-      <div>
-        <button onClick={openAll}>Expand All</button>
-        <button onClick={closeAll}>Collapse All</button>
-      </div>
-      {/* customize here */}
-    </div>
-  );
-}
+<Tree
+  initialTree={treeData}
+  options={{ syncWithInitialTree?: boolean }}
+  renderItem={(params: RenderItemParams) => ReactNode}
+/>
 ```
 
-### 3. Using flattenTree
+#### VirtualizedTree
 
-For maximum control with direct tree manipulation:
+Virtualized tree component for large datasets.
 
 ```tsx
-import { flattenTree, useTreeState } from '@kryoonminsang/headless-tree';
+<VirtualizedTree
+  initialTree={treeData}
+  height={number | string}
+  estimateSize={(index: number) => number}
+  overscan={number}
+  options={{ syncWithInitialTree?: boolean }}
+  renderItem={(params: RenderItemParams) => ReactNode}
+  // ... any div props (className, style, etc.)
+/>
+```
 
-function CustomFlatTree() {
-  const { tree, toggleOpen } = useTreeState({ initialTree: treeData });
-  const flattenedTree = flattenTree(tree);
+**Props:**
 
-  return (
-    <div>
-      {flattenedTree.map((flatItem) => (
-        <div
-          key={flatItem.item.id}
-          style={{
-            paddingLeft: flatItem.depth * 20,
-            borderLeft: flatItem.isLastTreeInSameDepth ? 'none' : '1px solid #ccc',
-          }}
-        >
-          <button onClick={() => toggleOpen(flatItem.item.id)}>
-            {flatItem.item.children.length > 0 ? (flatItem.item.isOpened ? '▼' : '▶') : '•'}
-          </button>
-          {flatItem.item.customData.name}
-        </div>
-      ))}
-    </div>
-  );
-}
+- `height` - Height of the virtualized container
+- `estimateSize` - Function returning estimated height of each item
+- `overscan` - Number of items to render outside visible area (default: 5)
+- All standard HTML div props are supported
+
+### Hooks
+
+#### useTreeState
+
+```tsx
+const { tree, open, close, toggleOpen, openAll, closeAll } = useTreeState({ initialTree, options });
+```
+
+### Utilities
+
+#### flattenTree
+
+```tsx
+const flattenedItems = flattenTree(tree);
+// Returns: Array<{ item, depth, parentId, isLastTreeInSameDepth, completeDepthHashTable }>
+```
+
+### Refs
+
+#### TreeRef
+
+```tsx
+const treeRef = useRef<TreeRef<YourDataType>>(null);
+// Access: tree, open, close, toggleOpen, openAll, closeAll
+```
+
+#### VirtualizedTreeRef
+
+```tsx
+const treeRef = useRef<VirtualizedTreeRef<YourDataType>>(null);
+// Access: tree, open, close, toggleOpen, openAll, closeAll, virtualizer
 ```
 
 ## TypeScript Support
@@ -147,10 +192,15 @@ function CustomFlatTree() {
 This library is fully typed with TypeScript. All types are exported and can be imported:
 
 ```tsx
-import type { TreeData, BasicTreeItem, RenderItemParams, TreeItemId } from '@kryoonminsang/headless-tree';
+import type {
+  TreeData,
+  BasicTreeItem,
+  RenderItemParams,
+  TreeItemId,
+  VirtualizedTreeProps,
+  VirtualizedTreeRef,
+} from '@kryoonminsang/headless-tree';
 ```
-
-For detailed type definitions, please refer to the source code or your IDE's IntelliSense.
 
 ## Contributing
 
