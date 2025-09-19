@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useMemo, type ReactElement, type Ref } from 'react';
-import { flattenTree } from './flattenTree';
+import { flattenTree } from './utils/flattenTree';
 import type { BasicTreeItem, TreeProps } from './types';
 import { useTreeState } from './useTreeState';
 
