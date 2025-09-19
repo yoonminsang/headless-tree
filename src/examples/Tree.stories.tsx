@@ -1,20 +1,20 @@
-import { useRef } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Tree, type TreeRef } from '../HeadlessTree';
-import { Button, ControlsPanel, TreeContainer, TreeItemRenderer, styles } from './ui';
+import { useRef } from 'react';
+import { Tree, type BasicTreeItem, type TreeData, type TreeRef } from '../HeadlessTree';
+import { Button, ControlsPanel, TreeContainer, TreeItemRenderer, type FileItem } from './ui';
 
-const createSampleFileTree = () => ({
+const createTree = (): TreeData<BasicTreeItem<FileItem>> => ({
   rootIds: ['1', '2', '3'],
   items: {
     '1': {
       id: '1',
       children: ['1-1', '1-2', '1-3'],
-      customData: { name: 'src', type: 'folder' as const },
+      customData: { name: 'src', type: 'folder' },
     },
     '2': {
       id: '2',
       children: ['2-1', '2-2'],
-      customData: { name: 'docs', type: 'folder' as const },
+      customData: { name: 'docs', type: 'folder' },
     },
     '3': {
       id: '3',
@@ -29,7 +29,7 @@ const createSampleFileTree = () => ({
     '1-2': {
       id: '1-2',
       children: ['1-2-1'],
-      customData: { name: 'components', type: 'folder' as const },
+      customData: { name: 'components', type: 'folder' },
     },
     '1-3': {
       id: '1-3',
@@ -55,8 +55,8 @@ const createSampleFileTree = () => ({
 });
 
 function TreeComponent() {
-  const treeData = createSampleFileTree();
-  const treeRef = useRef<TreeRef<(typeof treeData.items)['1']>>(null);
+  const treeData = createTree();
+  const treeRef = useRef<TreeRef<BasicTreeItem<FileItem>>>(null);
 
   const handleExpandAll = () => {
     treeRef.current?.openAll();
@@ -67,13 +67,27 @@ function TreeComponent() {
   };
 
   return (
-    <div style={styles.container}>
+    <div
+      style={{
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        maxWidth: '800px',
+        margin: '0 auto',
+      }}
+    >
       <ControlsPanel>
         <Button onClick={handleExpandAll}>Expand All</Button>
         <Button onClick={handleCollapseAll} variant="secondary">
           Collapse All
         </Button>
-        <span style={styles.stats}>Basic tree with programmatic controls</span>
+        <span
+          style={{
+            color: '#666',
+            fontSize: '13px',
+            fontWeight: 'normal',
+          }}
+        >
+          Basic tree with programmatic controls
+        </span>
       </ControlsPanel>
 
       <TreeContainer>

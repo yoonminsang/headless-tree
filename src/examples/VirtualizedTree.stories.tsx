@@ -1,9 +1,9 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { VirtualizedTree, type VirtualizedTreeRef, type BasicTreeItem, type TreeData } from '../HeadlessTree';
-import { Button, ControlsPanel, TreeContainer, TreeItemRenderer, styles, type FileItem } from './ui';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { VirtualizedTree, type BasicTreeItem, type TreeData, type VirtualizedTreeRef } from '../HeadlessTree';
+import { Button, ControlsPanel, TreeContainer, TreeItemRenderer, type FileItem } from './ui';
 
-function generateLargeTreeData(): TreeData<BasicTreeItem<FileItem>> {
+const createTree = (): TreeData<BasicTreeItem<FileItem>> => {
   const items: Record<string, BasicTreeItem<FileItem>> = {};
   const rootIds: string[] = [];
 
@@ -75,12 +75,10 @@ function generateLargeTreeData(): TreeData<BasicTreeItem<FileItem>> {
   }
 
   return { rootIds, items };
-}
-
-// Generate data once to avoid recreation on every render
-const largeTreeData = generateLargeTreeData();
+};
 
 function VirtualizedTreeExample() {
+  const [largeTreeData] = useState(createTree);
   const treeRef = useRef<VirtualizedTreeRef<BasicTreeItem<FileItem>>>(null);
   const [stats, setStats] = useState({ visible: 0, total: 0, expanded: false });
 
@@ -93,7 +91,7 @@ function VirtualizedTreeExample() {
         expanded: virtualItems > 2000, // Rough estimate if expanded
       });
     }
-  }, []);
+  }, [largeTreeData.items]);
 
   const handleExpandAll = () => {
     treeRef.current?.openAll();
@@ -120,7 +118,13 @@ function VirtualizedTreeExample() {
   }, [updateStats]);
 
   return (
-    <div style={styles.container}>
+    <div
+      style={{
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        maxWidth: '800px',
+        margin: '0 auto',
+      }}
+    >
       <ControlsPanel>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <Button onClick={handleExpandAll}>Expand All</Button>
@@ -134,7 +138,14 @@ function VirtualizedTreeExample() {
           <Button onClick={handleScrollToMiddle}>Scroll to Middle</Button>
         </div>
 
-        <div style={{ ...styles.stats, marginTop: '8px', fontSize: '13px' }}>
+        <div
+          style={{
+            color: '#666',
+            fontSize: '13px',
+            fontWeight: 'normal',
+            marginTop: '8px',
+          }}
+        >
           <strong>Performance Stats:</strong> {stats.visible.toLocaleString()} visible items •{' '}
           {stats.total.toLocaleString()} total items • 10 levels deep
           {stats.expanded && <span style={{ color: '#e74c3c' }}> • High memory usage (all expanded)</span>}
@@ -148,8 +159,12 @@ function VirtualizedTreeExample() {
           height="500px"
           estimateSize={() => 32}
           overscan={10}
+          options={{
+            syncWithInitialTree: true,
+          }}
           renderItem={({ item, depth, toggleOpenState }) => (
             <div
+              key={item.id}
               style={{
                 backgroundColor: depth % 2 === 0 ? '#ffffff' : '#fafbfc',
               }}
