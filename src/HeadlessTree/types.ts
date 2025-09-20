@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 
 export type TreeItemId = number | string;
 
+export type ParentMap = Map<TreeItemId, TreeItemId | null>;
+
 export interface BasicTreeItem<CustomData = unknown> {
   id: TreeItemId;
   /** List of child IDs for the tree item */
