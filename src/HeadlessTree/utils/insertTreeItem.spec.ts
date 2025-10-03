@@ -1,7 +1,8 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { insertTreeItem, insertIdIntoArray } from './insertTreeItem';
-import type { BasicTreeItem, TreeData } from '../types';
+import type { BasicTreeItem, ChildrenIndexMap, TreeData } from '../types';
 import * as logModule from '../../internal/logError';
+import { buildChildrenIndexMap } from './buildChildrenIndexMap';
 
 const createTreeItem = <T = Record<string, unknown>>(
   id: string | number,
@@ -73,12 +74,23 @@ describe('insertIdIntoArray', () => {
   const newItem = createTreeItem('new-item');
   const treeItemIds = ['1', '2', '3'];
 
+  // Create a simple children index map for testing
+  const createSimpleIndexMap = (): ChildrenIndexMap => {
+    const childrenIndexMap = new Map();
+    const rootIndexes = new Map();
+    treeItemIds.forEach((id, index) => rootIndexes.set(id, index));
+    childrenIndexMap.set(null, rootIndexes);
+    return childrenIndexMap;
+  };
+
   describe('Position-based insertion', () => {
     it('should insert at first position', () => {
       const result = insertIdIntoArray({
         position: 'first',
         treeItemIds,
         newItem,
+        parentId: null,
+        childrenIndexMap: createSimpleIndexMap(),
       });
       expect(result).toEqual(['new-item', '1', '2', '3']);
     });
@@ -88,6 +100,8 @@ describe('insertIdIntoArray', () => {
         position: 'last',
         treeItemIds,
         newItem,
+        parentId: null,
+        childrenIndexMap: createSimpleIndexMap(),
       });
       expect(result).toEqual(['1', '2', '3', 'new-item']);
     });
@@ -97,6 +111,8 @@ describe('insertIdIntoArray', () => {
         position: 1,
         treeItemIds,
         newItem,
+        parentId: null,
+        childrenIndexMap: createSimpleIndexMap(),
       });
       expect(result).toEqual(['1', 'new-item', '2', '3']);
     });
@@ -106,6 +122,8 @@ describe('insertIdIntoArray', () => {
         position: 0,
         treeItemIds,
         newItem,
+        parentId: null,
+        childrenIndexMap: createSimpleIndexMap(),
       });
       expect(result).toEqual(['new-item', '1', '2', '3']);
     });
@@ -115,6 +133,8 @@ describe('insertIdIntoArray', () => {
         position: 3,
         treeItemIds,
         newItem,
+        parentId: null,
+        childrenIndexMap: createSimpleIndexMap(),
       });
       expect(result).toEqual(['1', '2', '3', 'new-item']);
     });
@@ -126,6 +146,8 @@ describe('insertIdIntoArray', () => {
         position: { before: '2' },
         treeItemIds,
         newItem,
+        parentId: null,
+        childrenIndexMap: createSimpleIndexMap(),
       });
       expect(result).toEqual(['1', 'new-item', '2', '3']);
     });
@@ -135,6 +157,8 @@ describe('insertIdIntoArray', () => {
         position: { after: '2' },
         treeItemIds,
         newItem,
+        parentId: null,
+        childrenIndexMap: createSimpleIndexMap(),
       });
       expect(result).toEqual(['1', '2', 'new-item', '3']);
     });
@@ -144,6 +168,8 @@ describe('insertIdIntoArray', () => {
         position: { before: '1' },
         treeItemIds,
         newItem,
+        parentId: null,
+        childrenIndexMap: createSimpleIndexMap(),
       });
       expect(result).toEqual(['new-item', '1', '2', '3']);
     });
@@ -153,6 +179,8 @@ describe('insertIdIntoArray', () => {
         position: { after: '3' },
         treeItemIds,
         newItem,
+        parentId: null,
+        childrenIndexMap: createSimpleIndexMap(),
       });
       expect(result).toEqual(['1', '2', '3', 'new-item']);
     });
@@ -164,6 +192,8 @@ describe('insertIdIntoArray', () => {
         position: { before: 'non-existent' },
         treeItemIds,
         newItem,
+        parentId: null,
+        childrenIndexMap: createSimpleIndexMap(),
       });
 
       expect(logErrorSpy).toHaveBeenCalledOnce();
@@ -175,6 +205,8 @@ describe('insertIdIntoArray', () => {
         position: { after: 'non-existent' },
         treeItemIds,
         newItem,
+        parentId: null,
+        childrenIndexMap: createSimpleIndexMap(),
       });
 
       expect(logErrorSpy).toHaveBeenCalledOnce();
@@ -186,6 +218,8 @@ describe('insertIdIntoArray', () => {
         position: -1,
         treeItemIds,
         newItem,
+        parentId: null,
+        childrenIndexMap: createSimpleIndexMap(),
       });
 
       expect(logErrorSpy).toHaveBeenCalledOnce();
@@ -197,6 +231,8 @@ describe('insertIdIntoArray', () => {
         position: 4,
         treeItemIds,
         newItem,
+        parentId: null,
+        childrenIndexMap: createSimpleIndexMap(),
       });
 
       expect(logErrorSpy).toHaveBeenCalledOnce();
@@ -210,6 +246,8 @@ describe('insertIdIntoArray', () => {
         position: 'first',
         treeItemIds: [],
         newItem,
+        parentId: null,
+        childrenIndexMap: new Map(),
       });
       expect(result).toEqual(['new-item']);
     });
@@ -220,6 +258,7 @@ describe('insertTreeItem', () => {
   describe('Root insertion', () => {
     it('should insert new item at root level - first position', () => {
       const tree = createBasicTree();
+      const childrenIndexMap = buildChildrenIndexMap(tree);
       const newItem = createTreeItem('new-root');
 
       const result = insertTreeItem({
@@ -227,6 +266,7 @@ describe('insertTreeItem', () => {
         parentId: null,
         newItem,
         position: 'first',
+        childrenIndexMap,
       });
 
       expect(result.rootIds).toEqual(['new-root', '1']);
@@ -236,6 +276,7 @@ describe('insertTreeItem', () => {
 
     it('should insert new item at root level - last position', () => {
       const tree = createMultiRootTree();
+      const childrenIndexMap = buildChildrenIndexMap(tree);
       const newItem = createTreeItem('new-root');
 
       const result = insertTreeItem({
@@ -243,6 +284,7 @@ describe('insertTreeItem', () => {
         parentId: null,
         newItem,
         position: 'last',
+        childrenIndexMap,
       });
 
       expect(result.rootIds).toEqual(['a', 'd', 'new-root']);
@@ -251,6 +293,7 @@ describe('insertTreeItem', () => {
 
     it('should insert new item at root level - specific position', () => {
       const tree = createMultiRootTree();
+      const childrenIndexMap = buildChildrenIndexMap(tree);
       const newItem = createTreeItem('new-root');
 
       const result = insertTreeItem({
@@ -258,6 +301,7 @@ describe('insertTreeItem', () => {
         parentId: null,
         newItem,
         position: 1,
+        childrenIndexMap,
       });
 
       expect(result.rootIds).toEqual(['a', 'new-root', 'd']);
@@ -268,6 +312,7 @@ describe('insertTreeItem', () => {
   describe('Child insertion', () => {
     it('should insert new child at first position', () => {
       const tree = createBasicTree();
+      const childrenIndexMap = buildChildrenIndexMap(tree);
       const newItem = createTreeItem('new-child');
 
       const result = insertTreeItem({
@@ -275,6 +320,7 @@ describe('insertTreeItem', () => {
         parentId: '2',
         newItem,
         position: 'first',
+        childrenIndexMap,
       });
 
       expect(result.items['2'].children).toEqual(['new-child', '4', '5']);
@@ -284,6 +330,7 @@ describe('insertTreeItem', () => {
 
     it('should insert new child at last position', () => {
       const tree = createBasicTree();
+      const childrenIndexMap = buildChildrenIndexMap(tree);
       const newItem = createTreeItem('new-child');
 
       const result = insertTreeItem({
@@ -291,6 +338,7 @@ describe('insertTreeItem', () => {
         parentId: '2',
         newItem,
         position: 'last',
+        childrenIndexMap,
       });
 
       expect(result.items['2'].children).toEqual(['4', '5', 'new-child']);
@@ -299,6 +347,7 @@ describe('insertTreeItem', () => {
 
     it('should insert new child before existing child', () => {
       const tree = createBasicTree();
+      const childrenIndexMap = buildChildrenIndexMap(tree);
       const newItem = createTreeItem('new-child');
 
       const result = insertTreeItem({
@@ -306,6 +355,7 @@ describe('insertTreeItem', () => {
         parentId: '2',
         newItem,
         position: { before: '5' },
+        childrenIndexMap,
       });
 
       expect(result.items['2'].children).toEqual(['4', 'new-child', '5']);
@@ -314,6 +364,7 @@ describe('insertTreeItem', () => {
 
     it('should insert new child after existing child', () => {
       const tree = createBasicTree();
+      const childrenIndexMap = buildChildrenIndexMap(tree);
       const newItem = createTreeItem('new-child');
 
       const result = insertTreeItem({
@@ -321,6 +372,7 @@ describe('insertTreeItem', () => {
         parentId: '2',
         newItem,
         position: { after: '4' },
+        childrenIndexMap,
       });
 
       expect(result.items['2'].children).toEqual(['4', 'new-child', '5']);
@@ -329,6 +381,7 @@ describe('insertTreeItem', () => {
 
     it('should insert new child to leaf node', () => {
       const tree = createBasicTree();
+      const childrenIndexMap = buildChildrenIndexMap(tree);
       const newItem = createTreeItem('new-child');
 
       const result = insertTreeItem({
@@ -336,6 +389,7 @@ describe('insertTreeItem', () => {
         parentId: '7',
         newItem,
         position: 'first',
+        childrenIndexMap,
       });
 
       expect(result.items['7'].children).toEqual(['new-child']);
@@ -346,6 +400,7 @@ describe('insertTreeItem', () => {
   describe('Error handling', () => {
     it('should log error for non-existent parent', () => {
       const tree = createBasicTree();
+      const childrenIndexMap = buildChildrenIndexMap(tree);
       const newItem = createTreeItem('new-child');
 
       const result = insertTreeItem({
@@ -353,6 +408,7 @@ describe('insertTreeItem', () => {
         parentId: 'non-existent',
         newItem,
         position: 'first',
+        childrenIndexMap,
       });
 
       expect(logErrorSpy).toHaveBeenCalledOnce();
@@ -363,6 +419,7 @@ describe('insertTreeItem', () => {
 
     it('should handle invalid position in child insertion', () => {
       const tree = createBasicTree();
+      const childrenIndexMap = buildChildrenIndexMap(tree);
       const newItem = createTreeItem('new-child');
 
       const result = insertTreeItem({
@@ -370,6 +427,7 @@ describe('insertTreeItem', () => {
         parentId: '2',
         newItem,
         position: { before: 'non-existent' },
+        childrenIndexMap,
       });
 
       expect(logErrorSpy).toHaveBeenCalled();
@@ -381,6 +439,7 @@ describe('insertTreeItem', () => {
   describe('Data integrity', () => {
     it('should not mutate original tree', () => {
       const tree = createBasicTree();
+      const childrenIndexMap = buildChildrenIndexMap(tree);
       const originalRootIds = [...tree.rootIds];
       const originalItems = { ...tree.items };
       const newItem = createTreeItem('new-child');
@@ -390,6 +449,7 @@ describe('insertTreeItem', () => {
         parentId: '2',
         newItem,
         position: 'first',
+        childrenIndexMap,
       });
 
       expect(tree.rootIds).toEqual(originalRootIds);
@@ -398,6 +458,7 @@ describe('insertTreeItem', () => {
 
     it('should preserve all original items and properties', () => {
       const tree = createBasicTree();
+      const childrenIndexMap = buildChildrenIndexMap(tree);
       const newItem = createTreeItem('new-child');
 
       const result = insertTreeItem({
@@ -405,6 +466,7 @@ describe('insertTreeItem', () => {
         parentId: '1',
         newItem,
         position: 'last',
+        childrenIndexMap,
       });
 
       // All original items should be preserved
@@ -431,6 +493,7 @@ describe('insertTreeItem', () => {
           a: createTreeItem('a'),
         },
       };
+      const childrenIndexMap = buildChildrenIndexMap(mixedTree);
       const newItem = createTreeItem('new-mixed');
 
       const result = insertTreeItem({
@@ -438,6 +501,7 @@ describe('insertTreeItem', () => {
         parentId: 1,
         newItem,
         position: { after: 'a' },
+        childrenIndexMap,
       });
 
       expect(result.items[1].children).toEqual(['a', 'new-mixed', 2]);
@@ -445,6 +509,7 @@ describe('insertTreeItem', () => {
 
     it('should handle empty tree insertion at root', () => {
       const emptyTree = { rootIds: [], items: {} };
+      const childrenIndexMap = buildChildrenIndexMap(emptyTree);
       const newItem = createTreeItem('first-item');
 
       const result = insertTreeItem({
@@ -452,6 +517,7 @@ describe('insertTreeItem', () => {
         parentId: null,
         newItem,
         position: 'first',
+        childrenIndexMap,
       });
 
       expect(result.rootIds).toEqual(['first-item']);
@@ -472,6 +538,7 @@ describe('insertTreeItem', () => {
           }),
         },
       };
+      const childrenIndexMap = buildChildrenIndexMap(customTree);
 
       const newItem = createTreeItem('new-custom', {
         customData: { label: 'New Item', value: 99 },
@@ -482,6 +549,7 @@ describe('insertTreeItem', () => {
         parentId: 'root',
         newItem,
         position: 'last',
+        childrenIndexMap,
       });
 
       expect(result.items['root'].children).toEqual(['child1', 'new-custom']);

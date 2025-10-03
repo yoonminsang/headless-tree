@@ -1,5 +1,5 @@
 import { logError } from '../../internal/logError';
-import type { BasicTreeItem, TreeData, TreeItemId } from '../types';
+import type { BasicTreeItem, ChildrenIndexMap, TreeData, TreeItemId } from '../types';
 
 type InsertPosition =
   | number // Index-based insertion (0 = first position, 1 = second position, etc.)
@@ -12,10 +12,14 @@ export const insertIdIntoArray = ({
   position,
   treeItemIds,
   newItem,
+  parentId,
+  childrenIndexMap,
 }: {
   position: InsertPosition;
   treeItemIds: TreeItemId[];
   newItem: BasicTreeItem;
+  parentId: TreeItemId | null;
+  childrenIndexMap: ChildrenIndexMap;
 }): TreeItemId[] => {
   const result = [...treeItemIds];
   if (position === 'first') {
@@ -27,8 +31,8 @@ export const insertIdIntoArray = ({
     return result;
   }
   if (typeof position === 'object' && 'before' in position) {
-    const index = result.indexOf(position.before);
-    if (index === -1) {
+    const index = childrenIndexMap.get(parentId)?.get(position.before);
+    if (index === undefined) {
       logError(new Error(`[insertTreeItem] Item with id "${position.before}" not found in the tree`));
       return result;
     }
@@ -36,8 +40,8 @@ export const insertIdIntoArray = ({
     return result;
   }
   if (typeof position === 'object' && 'after' in position) {
-    const index = result.indexOf(position.after);
-    if (index === -1) {
+    const index = childrenIndexMap.get(parentId)?.get(position.after);
+    if (index === undefined) {
       logError(new Error(`[insertTreeItem] Item with id "${position.after}" not found in the tree`));
       return result;
     }
@@ -59,18 +63,23 @@ export const insertTreeItem = <T extends BasicTreeItem>({
   parentId,
   newItem,
   position,
+  childrenIndexMap,
 }: {
   tree: TreeData<T>;
   parentId: TreeItemId | null;
   newItem: T;
   position: InsertPosition;
+  childrenIndexMap: ChildrenIndexMap;
 }): TreeData<T> => {
   const newRootIds = [...tree.rootIds];
   const newTreeItems = { ...tree.items, [newItem.id]: newItem };
 
   // NOTE: Add to root
   if (parentId === null) {
-    return { rootIds: insertIdIntoArray({ position, treeItemIds: newRootIds, newItem }), items: newTreeItems };
+    return {
+      rootIds: insertIdIntoArray({ position, treeItemIds: newRootIds, newItem, parentId, childrenIndexMap }),
+      items: newTreeItems,
+    };
   }
 
   if (!newTreeItems[parentId]) {
@@ -78,7 +87,13 @@ export const insertTreeItem = <T extends BasicTreeItem>({
     return tree;
   }
 
-  const newChildren = insertIdIntoArray({ position, treeItemIds: newTreeItems[parentId].children, newItem });
+  const newChildren = insertIdIntoArray({
+    position,
+    treeItemIds: newTreeItems[parentId].children,
+    newItem,
+    parentId,
+    childrenIndexMap,
+  });
   newTreeItems[parentId] = { ...newTreeItems[parentId], children: newChildren };
   return { rootIds: newRootIds, items: newTreeItems };
 };
