@@ -8,7 +8,7 @@ import {
   type ReactElement,
   type Ref,
 } from 'react';
-import { flattenTree } from './flattenTree';
+import { flattenTree } from './utils/flattenTree';
 import type { BasicTreeItem, TreeProps } from './types';
 import { useTreeState } from './useTreeState';
 
@@ -16,8 +16,8 @@ export type VirtualizedTreeRef<CustomData extends BasicTreeItem> = ReturnType<ty
   virtualizer: Virtualizer<HTMLDivElement, Element>;
 };
 
-export interface VirtualizedTreeProps<CustomData extends BasicTreeItem> 
-  extends TreeProps<CustomData>, 
+export interface VirtualizedTreeProps<CustomData extends BasicTreeItem>
+  extends TreeProps<CustomData>,
     Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
   /** Height of the virtualized container */
   height: number | string;
@@ -41,7 +41,11 @@ function VirtualizedTreeComponent<T extends BasicTreeItem>(
   }: VirtualizedTreeProps<T>,
   ref: Ref<VirtualizedTreeRef<T>>
 ) {
-  const { tree, open, close, toggleOpen, openAll, closeAll } = useTreeState({ initialTree, options });
+  const { tree, parentMap, childrenIndexMap, insertItem, removeItem, open, close, toggleOpen, openAll, closeAll } =
+    useTreeState({
+      initialTree,
+      options,
+    });
   const flattenedTree = useMemo(() => flattenTree(tree), [tree]);
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -56,14 +60,18 @@ function VirtualizedTreeComponent<T extends BasicTreeItem>(
     ref,
     () => ({
       tree,
+      parentMap,
+      childrenIndexMap,
       open,
       close,
       toggleOpen,
       openAll,
       closeAll,
       virtualizer,
+      insertItem,
+      removeItem,
     }),
-    [tree, open, close, toggleOpen, openAll, closeAll, virtualizer]
+    [tree, parentMap, childrenIndexMap, insertItem, removeItem, open, close, toggleOpen, openAll, closeAll, virtualizer]
   );
 
   return (

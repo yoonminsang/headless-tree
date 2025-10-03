@@ -1,5 +1,5 @@
-import { logError } from '../internal/logError';
-import type { BasicTreeItem, TreeData, TreeItemId } from './types';
+import { logError } from '../../internal/logError';
+import type { BasicTreeItem, TreeData, TreeItemId } from '../types';
 
 interface FlattenedTreeItem<CustomData> {
   item: CustomData;

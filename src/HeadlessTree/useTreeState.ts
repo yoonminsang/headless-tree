@@ -2,7 +2,11 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { logError } from '../internal/logError';
 import { useDidUpdate } from '../internal/useDidUpdate';
-import type { BasicTreeItem, TreeData, TreeItemId, TreeProps } from './types';
+import type { BasicTreeItem, ChildrenIndexMap, ParentMap, TreeData, TreeItemId, TreeProps } from './types';
+import { buildChildrenIndexMap } from './utils/buildChildrenIndexMap';
+import { buildParentMap } from './utils/buildParentMap';
+import { insertTreeItem } from './utils/insertTreeItem';
+import { removeTreeItem } from './utils/removeTreeItem';
 
 // Helper function to extract opened IDs from tree items
 const extractOpenedIds = <T extends BasicTreeItem>(items: Record<TreeItemId, T>): Set<TreeItemId> => {
@@ -22,6 +26,9 @@ export const useTreeState = <CustomData extends BasicTreeItem>({
 }: Pick<TreeProps<CustomData>, 'initialTree' | 'options'>) => {
   const [baseTree, setBasicTree] = useState<TreeData<CustomData>>(initialTree);
   const [openedIds, setOpenedIds] = useState<Set<TreeItemId>>(() => extractOpenedIds(initialTree.items));
+
+  const parentMap = useMemo<ParentMap>(() => buildParentMap(baseTree), [baseTree]);
+  const childrenIndexMap = useMemo<ChildrenIndexMap>(() => buildChildrenIndexMap(baseTree), [baseTree]);
 
   // Merge base tree with open state for rendering
   const tree = useMemo<TreeData<CustomData>>(() => {
@@ -95,6 +102,34 @@ export const useTreeState = <CustomData extends BasicTreeItem>({
     setOpenedIds(new Set());
   }, []);
 
+  const insertItem = useCallback(
+    (parentId: TreeItemId | null, newItem: CustomData, position: Parameters<typeof insertTreeItem>[0]['position']) => {
+      setBasicTree((prev) =>
+        insertTreeItem({
+          tree: prev,
+          parentId,
+          newItem,
+          position,
+          childrenIndexMap,
+        })
+      );
+    },
+    [childrenIndexMap]
+  );
+
+  const removeItem = useCallback(
+    (itemId: TreeItemId) => {
+      setBasicTree((prev) =>
+        removeTreeItem({
+          tree: prev,
+          itemId,
+          parentMap,
+        })
+      );
+    },
+    [parentMap]
+  );
+
   useDidUpdate(() => {
     if (options?.syncWithInitialTree) {
       setOpenedIds(extractOpenedIds(initialTree.items));
@@ -104,10 +139,14 @@ export const useTreeState = <CustomData extends BasicTreeItem>({
 
   return {
     tree,
+    parentMap,
+    childrenIndexMap,
     open,
     close,
     toggleOpen,
     openAll,
     closeAll,
+    insertItem,
+    removeItem,
   };
 };

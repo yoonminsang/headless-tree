@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { flattenTree } from './flattenTree';
-import type { BasicTreeItem, TreeData } from './types';
-import * as logModule from '../internal/logError';
+import type { BasicTreeItem, TreeData } from '../types';
+import * as logModule from '../../internal/logError';
 
 /**
  * Basic tree structure for testing:
