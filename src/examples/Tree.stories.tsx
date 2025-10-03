@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Tree, type BasicTreeItem, type TreeData, type TreeRef } from '../HeadlessTree';
 import { Button, ControlsPanel, TreeContainer, TreeItemRenderer, type FileItem } from './ui';
 
@@ -54,7 +54,18 @@ const createTree = (): TreeData<BasicTreeItem<FileItem>> => ({
   },
 });
 
-function TreeComponent() {
+const meta: Meta<typeof Tree> = {
+  title: 'Examples/Tree',
+  component: Tree,
+  parameters: {
+    layout: 'centered',
+  },
+};
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+function DefaultTree() {
   const treeData = createTree();
   const treeRef = useRef<TreeRef<BasicTreeItem<FileItem>>>(null);
 
@@ -119,15 +130,105 @@ function TreeComponent() {
   );
 }
 
-const meta: Meta<typeof TreeComponent> = {
-  title: 'Examples/Tree',
-  component: TreeComponent,
-  parameters: {
-    layout: 'centered',
-  },
+export const Default: Story = {
+  render: () => <DefaultTree />,
 };
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+function TreeWithInsertRemove() {
+  const treeData = createTree();
+  const treeRef = useRef<TreeRef<BasicTreeItem<FileItem>>>(null);
+  const [counter, setCounter] = useState(1);
 
-export const Default: Story = {};
+  const handleInsertFile = () => {
+    const newId = `new-file-${counter}`;
+    const newItem: BasicTreeItem<FileItem> = {
+      id: newId,
+      children: [],
+      customData: { name: `new-file-${counter}.ts`, type: 'file', size: 100 },
+    };
+    treeRef.current?.insertItem('1', newItem, 'last');
+    setCounter((c) => c + 1);
+  };
+
+  const handleInsertFolder = () => {
+    const newId = `new-folder-${counter}`;
+    const newItem: BasicTreeItem<FileItem> = {
+      id: newId,
+      children: [],
+      customData: { name: `new-folder-${counter}`, type: 'folder' },
+    };
+    treeRef.current?.insertItem(null, newItem, 'last');
+    setCounter((c) => c + 1);
+  };
+
+  const handleRemovePackageJson = () => {
+    treeRef.current?.removeItem('3');
+  };
+
+  const handleRemoveSrc = () => {
+    treeRef.current?.removeItem('1');
+  };
+
+  return (
+    <div
+      style={{
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        maxWidth: '800px',
+        margin: '0 auto',
+      }}
+    >
+      <ControlsPanel>
+        <Button onClick={handleInsertFile}>Add File to src/</Button>
+        <Button onClick={handleInsertFolder} variant="secondary">
+          Add Folder to Root
+        </Button>
+        <Button onClick={handleRemovePackageJson} variant="secondary">
+          Remove package.json
+        </Button>
+        <Button onClick={handleRemoveSrc} variant="secondary">
+          Remove src/ (with children)
+        </Button>
+        <span
+          style={{
+            color: '#666',
+            fontSize: '13px',
+            fontWeight: 'normal',
+          }}
+        >
+          Insert & Remove operations
+        </span>
+      </ControlsPanel>
+
+      <TreeContainer>
+        <Tree
+          ref={treeRef}
+          initialTree={treeData}
+          options={{ syncWithInitialTree: false }}
+          renderItem={({ item, depth, toggleOpenState }) => (
+            <TreeItemRenderer
+              item={item}
+              depth={depth}
+              toggleOpenState={toggleOpenState}
+              iconType="emoji"
+              showSize={true}
+            />
+          )}
+        />
+      </TreeContainer>
+
+      <div style={{ marginTop: '16px', fontSize: '12px', color: '#666' }}>
+        <strong>Features:</strong>
+        <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
+          <li>Insert new items with insertItem(parentId, newItem, position)</li>
+          <li>Remove items with removeItem(itemId)</li>
+          <li>Removing a folder also removes all its children</li>
+          <li>Items are inserted at the specified position (first/last/before/after)</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+export const InsertAndRemove: Story = {
+  render: () => <TreeWithInsertRemove />,
+};
