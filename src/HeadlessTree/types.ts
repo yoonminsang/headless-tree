@@ -4,6 +4,9 @@ export type TreeItemId = number | string;
 
 export type ParentMap = Map<TreeItemId, TreeItemId | null>;
 
+/** @description Map of parent ID to a map of child ID to index position */
+export type ChildrenIndexMap = Map<TreeItemId | null, Map<TreeItemId, number>>;
+
 export interface BasicTreeItem<CustomData = unknown> {
   id: TreeItemId;
   /** List of child IDs for the tree item */
