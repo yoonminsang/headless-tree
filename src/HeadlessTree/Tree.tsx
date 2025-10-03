@@ -9,20 +9,28 @@ function TreeComponent<T extends BasicTreeItem>(
   { initialTree, options, renderItem }: TreeProps<T>,
   ref: Ref<TreeRef<T>>
 ) {
-  const { tree, open, close, toggleOpen, openAll, closeAll } = useTreeState({ initialTree, options });
+  const { tree, parentMap, childrenIndexMap, open, close, toggleOpen, openAll, closeAll, insertItem, removeItem } =
+    useTreeState({
+      initialTree,
+      options,
+    });
   const flattenedTree = useMemo(() => flattenTree(tree), [tree]);
 
   useImperativeHandle(
     ref,
     () => ({
       tree,
+      parentMap,
+      childrenIndexMap,
       open,
       close,
       toggleOpen,
       openAll,
       closeAll,
+      insertItem,
+      removeItem,
     }),
-    [tree, open, close, toggleOpen, openAll, closeAll]
+    [tree, parentMap, childrenIndexMap, insertItem, removeItem, open, close, toggleOpen, openAll, closeAll]
   );
 
   return (
