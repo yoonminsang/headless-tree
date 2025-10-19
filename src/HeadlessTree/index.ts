@@ -2,6 +2,7 @@ export { Tree } from './Tree';
 export type { TreeRef } from './Tree';
 export type * from './types';
 export { useTreeState } from './useTreeState';
+export { canMoveItem } from './utils/canMoveItem';
 export { flattenTree } from './utils/flattenTree';
 export { getAllDescendantIds } from './utils/getAllDescendantIds';
 export { getPath } from './utils/getPath';
