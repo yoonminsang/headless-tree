@@ -43,6 +43,10 @@ export interface RenderItemParams<CustomData> {
    * you need to know if there are "siblings left to render" at each depth.
    */
   completeDepthHashTable: Record<number, true>;
+  /** Index in the flattened tree (current rendered position) */
+  flatIndex: number;
+  /** Index within the same parent's children array */
+  childIndex: number;
   open: VoidFunction;
   close: VoidFunction;
   toggleOpenState: VoidFunction;

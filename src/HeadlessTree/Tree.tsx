@@ -14,7 +14,7 @@ function TreeComponent<T extends BasicTreeItem>(
       initialTree,
       options,
     });
-  const flattenedTree = useMemo(() => flattenTree(tree), [tree]);
+  const flattenedTree = useMemo(() => flattenTree(tree, childrenIndexMap), [tree, childrenIndexMap]);
 
   useImperativeHandle(
     ref,
@@ -44,6 +44,8 @@ function TreeComponent<T extends BasicTreeItem>(
           completeDepthHashTable: item.completeDepthHashTable,
           item: item.item,
           parentId: item.parentId,
+          flatIndex: item.flatIndex,
+          childIndex: item.childIndex,
           toggleOpenState: () => toggleOpen(item.item.id),
         })
       )}

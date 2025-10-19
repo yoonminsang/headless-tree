@@ -46,7 +46,7 @@ function VirtualizedTreeComponent<T extends BasicTreeItem>(
       initialTree,
       options,
     });
-  const flattenedTree = useMemo(() => flattenTree(tree), [tree]);
+  const flattenedTree = useMemo(() => flattenTree(tree, childrenIndexMap), [tree, childrenIndexMap]);
   const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({
@@ -113,6 +113,8 @@ function VirtualizedTreeComponent<T extends BasicTreeItem>(
                 completeDepthHashTable: flatItem.completeDepthHashTable,
                 item: flatItem.item,
                 parentId: flatItem.parentId,
+                flatIndex: flatItem.flatIndex,
+                childIndex: flatItem.childIndex,
                 toggleOpenState: () => toggleOpen(flatItem.item.id),
               })}
             </div>
