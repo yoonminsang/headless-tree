@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { flattenTree } from './flattenTree';
 import type { BasicTreeItem, TreeData } from '../types';
 import * as logModule from '../../internal/logError';
+import { buildChildrenIndexMap } from './buildChildrenIndexMap';
 
 /**
  * Basic tree structure for testing:
@@ -41,7 +42,8 @@ describe('flattenTree', () => {
   describe('Core functionality', () => {
     it('flattens tree structure preserving hierarchy', () => {
       const tree = createBasicTree();
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
 
       expect(result).toHaveLength(4);
       expect(result.map((item) => item.item.id)).toEqual(['1', '3', '4', '2']);
@@ -58,7 +60,8 @@ describe('flattenTree', () => {
         },
       });
 
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
       expect(result.map((item) => item.item.id)).toEqual([1, 2, 'a', 'b']);
     });
 
@@ -74,13 +77,15 @@ describe('flattenTree', () => {
         },
       });
 
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
       expect(result.map((item) => item.depth)).toEqual([0, 1, 2, 3, 4]);
     });
 
     it('establishes correct parentId', () => {
       const tree = createBasicTree();
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
 
       expect(result[0].parentId).toBeNull();
       expect(result[1].parentId).toBe('1');
@@ -89,8 +94,108 @@ describe('flattenTree', () => {
     });
 
     it('handles empty tree', () => {
-      const result = flattenTree({ rootIds: [], items: {} });
+      const tree = { rootIds: [], items: {} };
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
       expect(result).toEqual([]);
+    });
+
+    it('calculates flatIndex correctly for flattened tree', () => {
+      const tree = createBasicTree();
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
+
+      // flatIndex should match the position in the flattened array
+      expect(result[0].flatIndex).toBe(0);
+      expect(result[1].flatIndex).toBe(1);
+      expect(result[2].flatIndex).toBe(2);
+      expect(result[3].flatIndex).toBe(3);
+    });
+
+    it('calculates childIndex correctly for items in same parent', () => {
+      const tree = createTree({
+        rootIds: ['1', '2', '3'],
+        items: {
+          '1': createTreeItem('1', { children: ['4', '5', '6'], isOpened: true }),
+          '2': createTreeItem('2'),
+          '3': createTreeItem('3'),
+          '4': createTreeItem('4'),
+          '5': createTreeItem('5'),
+          '6': createTreeItem('6'),
+        },
+      });
+
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
+
+      // Root items: '1', '2', '3' should have childIndex 0, 1, 2
+      expect(result.find((item) => item.item.id === '1')?.childIndex).toBe(0);
+      expect(result.find((item) => item.item.id === '2')?.childIndex).toBe(1);
+      expect(result.find((item) => item.item.id === '3')?.childIndex).toBe(2);
+
+      // Children of '1': '4', '5', '6' should have childIndex 0, 1, 2
+      expect(result.find((item) => item.item.id === '4')?.childIndex).toBe(0);
+      expect(result.find((item) => item.item.id === '5')?.childIndex).toBe(1);
+      expect(result.find((item) => item.item.id === '6')?.childIndex).toBe(2);
+    });
+
+    it('maintains correct flatIndex and childIndex in complex nested structure', () => {
+      const tree = createTree({
+        rootIds: ['1', '2'],
+        items: {
+          '1': createTreeItem('1', { children: ['3', '4'], isOpened: true }),
+          '2': createTreeItem('2', { children: ['5'], isOpened: true }),
+          '3': createTreeItem('3', { children: ['6', '7'], isOpened: true }),
+          '4': createTreeItem('4'),
+          '5': createTreeItem('5'),
+          '6': createTreeItem('6'),
+          '7': createTreeItem('7'),
+        },
+      });
+
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
+
+      // Flattened order: 1, 3, 6, 7, 4, 2, 5
+      // Verify flatIndex matches array position
+      result.forEach((item, index) => {
+        expect(item.flatIndex).toBe(index);
+      });
+
+      // Verify childIndex for specific items
+      expect(result.find((item) => item.item.id === '1')?.childIndex).toBe(0); // First root
+      expect(result.find((item) => item.item.id === '2')?.childIndex).toBe(1); // Second root
+      expect(result.find((item) => item.item.id === '3')?.childIndex).toBe(0); // First child of '1'
+      expect(result.find((item) => item.item.id === '4')?.childIndex).toBe(1); // Second child of '1'
+      expect(result.find((item) => item.item.id === '6')?.childIndex).toBe(0); // First child of '3'
+      expect(result.find((item) => item.item.id === '7')?.childIndex).toBe(1); // Second child of '3'
+    });
+
+    it('calculates flatIndex sequentially even when some branches are collapsed', () => {
+      const tree = createTree({
+        rootIds: ['1', '2'],
+        items: {
+          '1': createTreeItem('1', { children: ['3', '4'], isOpened: false }), // Collapsed
+          '2': createTreeItem('2', { children: ['5'], isOpened: true }),
+          '3': createTreeItem('3'),
+          '4': createTreeItem('4'),
+          '5': createTreeItem('5'),
+        },
+      });
+
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
+
+      // Only visible items: 1, 2, 5
+      expect(result).toHaveLength(3);
+      expect(result[0].flatIndex).toBe(0);
+      expect(result[1].flatIndex).toBe(1);
+      expect(result[2].flatIndex).toBe(2);
+
+      // childIndex should still be correct
+      expect(result[0].childIndex).toBe(0); // '1' is first root
+      expect(result[1].childIndex).toBe(1); // '2' is second root
+      expect(result[2].childIndex).toBe(0); // '5' is first child of '2'
     });
   });
 
@@ -104,13 +209,15 @@ describe('flattenTree', () => {
         },
       });
 
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
       expect(result).toHaveLength(1);
     });
 
     it('marks last item at each depth level', () => {
       const tree = createBasicTree();
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
 
       expect(result[0].isLastTreeInSameDepth).toBe(false);
       expect(result[1].isLastTreeInSameDepth).toBe(true);
@@ -119,7 +226,8 @@ describe('flattenTree', () => {
 
     it('builds depth completion table for tree line rendering', () => {
       const tree = createBasicTree();
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
 
       expect(result[0].completeDepthHashTable).toEqual({});
       expect(result[1].completeDepthHashTable).toEqual({ 0: true });
@@ -140,7 +248,8 @@ describe('flattenTree', () => {
         },
       });
 
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
 
       expect(result[0].completeDepthHashTable).toEqual({});
       expect(result[1].completeDepthHashTable).toEqual({ 0: true });
@@ -170,7 +279,8 @@ describe('flattenTree', () => {
         },
       });
 
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
       expect(result).toHaveLength(1);
       expect(logErrorSpy).toHaveBeenCalledOnce();
     });
@@ -183,7 +293,8 @@ describe('flattenTree', () => {
         },
       });
 
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
       expect(result).toHaveLength(1);
       expect(logErrorSpy).toHaveBeenCalledOnce();
     });
@@ -198,7 +309,8 @@ describe('flattenTree', () => {
         },
       });
 
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
       expect(result.map((item) => item.item.id)).toEqual(['1', '2', '3']);
       expect(logErrorSpy).toHaveBeenCalledOnce();
     });
@@ -217,7 +329,8 @@ describe('flattenTree', () => {
         },
       });
 
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
       expect(result.map((item) => item.item.id)).toEqual(['1', 'valid1', 'valid2', 'valid3']);
       expect(logErrorSpy).toHaveBeenCalledOnce();
     });
@@ -233,7 +346,8 @@ describe('flattenTree', () => {
         },
       });
 
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
       expect(result.map((item) => item.item.id)).toEqual(['1', '2']);
     });
 
@@ -248,7 +362,8 @@ describe('flattenTree', () => {
         },
       });
 
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
       expect(result.map((item) => item.item.id)).toEqual(['1', '2', '3', '4']);
     });
 
@@ -263,7 +378,8 @@ describe('flattenTree', () => {
         },
       });
 
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
       expect(result[0].item.children).toEqual(['2', '3']);
       expect(result[1].item.children).toEqual(['4']);
       expect(result[2].item.children).toEqual([]);
@@ -302,7 +418,8 @@ describe('flattenTree', () => {
         },
       });
 
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
       expect(result[0].item.customData).toEqual({ name: 'Root', value: 100 });
       expect(result[1].item.customData).toEqual({ name: 'Child', value: 200 });
     });
@@ -342,7 +459,8 @@ describe('flattenTree', () => {
         },
       });
 
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      const result = flattenTree(tree, childrenIndexMap);
       expect(result[0].item.customData.metadata?.config?.settings?.theme).toBe('dark');
       expect(result[1].item.customData.metadata?.config?.settings?.theme).toBe('light');
     });
@@ -367,8 +485,9 @@ describe('flattenTree', () => {
       }
       tree.items[currentId] = createTreeItem(currentId);
 
-      expect(() => flattenTree(tree)).not.toThrow();
-      const result = flattenTree(tree);
+      const childrenIndexMap = buildChildrenIndexMap(tree);
+      expect(() => flattenTree(tree, childrenIndexMap)).not.toThrow();
+      const result = flattenTree(tree, childrenIndexMap);
       expect(result).toHaveLength(DEPTH + 1);
     });
 
@@ -390,8 +509,9 @@ describe('flattenTree', () => {
         tree.items[childId] = createTreeItem(childId);
       }
 
+      const childrenIndexMap = buildChildrenIndexMap(tree);
       const startTime = performance.now();
-      const result = flattenTree(tree);
+      const result = flattenTree(tree, childrenIndexMap);
       const endTime = performance.now();
 
       expect(result).toHaveLength(NODE_COUNT + 1);

@@ -103,15 +103,6 @@ function VirtualizedTreeExample() {
     setTimeout(updateStats, 100);
   };
 
-  const handleScrollToTop = () => {
-    treeRef.current?.virtualizer.scrollToIndex(0);
-  };
-
-  const handleScrollToMiddle = () => {
-    const middleIndex = Math.floor(treeRef.current?.virtualizer.getVirtualItems().length || 0 / 2);
-    treeRef.current?.virtualizer.scrollToIndex(middleIndex);
-  };
-
   useEffect(() => {
     const interval = setInterval(updateStats, 1000);
     return () => clearInterval(interval);
@@ -133,9 +124,6 @@ function VirtualizedTreeExample() {
           </Button>
 
           <div style={{ height: '20px', width: '1px', backgroundColor: '#ddd', margin: '0 8px' }} />
-
-          <Button onClick={handleScrollToTop}>Scroll to Top</Button>
-          <Button onClick={handleScrollToMiddle}>Scroll to Middle</Button>
         </div>
 
         <div
@@ -143,7 +131,6 @@ function VirtualizedTreeExample() {
             color: '#666',
             fontSize: '13px',
             fontWeight: 'normal',
-            marginTop: '8px',
           }}
         >
           <strong>Performance Stats:</strong> {stats.visible.toLocaleString()} visible items •{' '}

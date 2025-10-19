@@ -41,12 +41,23 @@ function VirtualizedTreeComponent<T extends BasicTreeItem>(
   }: VirtualizedTreeProps<T>,
   ref: Ref<VirtualizedTreeRef<T>>
 ) {
-  const { tree, parentMap, childrenIndexMap, insertItem, removeItem, open, close, toggleOpen, openAll, closeAll } =
-    useTreeState({
-      initialTree,
-      options,
-    });
-  const flattenedTree = useMemo(() => flattenTree(tree), [tree]);
+  const {
+    tree,
+    parentMap,
+    childrenIndexMap,
+    insertItem,
+    removeItem,
+    open,
+    close,
+    toggleOpen,
+    openAll,
+    closeAll,
+    moveItem,
+  } = useTreeState({
+    initialTree,
+    options,
+  });
+  const flattenedTree = useMemo(() => flattenTree(tree, childrenIndexMap), [tree, childrenIndexMap]);
   const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({
@@ -70,8 +81,22 @@ function VirtualizedTreeComponent<T extends BasicTreeItem>(
       virtualizer,
       insertItem,
       removeItem,
+      moveItem,
     }),
-    [tree, parentMap, childrenIndexMap, insertItem, removeItem, open, close, toggleOpen, openAll, closeAll, virtualizer]
+    [
+      tree,
+      parentMap,
+      childrenIndexMap,
+      insertItem,
+      removeItem,
+      open,
+      close,
+      toggleOpen,
+      openAll,
+      closeAll,
+      virtualizer,
+      moveItem,
+    ]
   );
 
   return (
@@ -113,6 +138,8 @@ function VirtualizedTreeComponent<T extends BasicTreeItem>(
                 completeDepthHashTable: flatItem.completeDepthHashTable,
                 item: flatItem.item,
                 parentId: flatItem.parentId,
+                flatIndex: flatItem.flatIndex,
+                childIndex: flatItem.childIndex,
                 toggleOpenState: () => toggleOpen(flatItem.item.id),
               })}
             </div>

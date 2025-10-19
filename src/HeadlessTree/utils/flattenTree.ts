@@ -1,5 +1,5 @@
 import { logError } from '../../internal/logError';
-import type { BasicTreeItem, TreeData, TreeItemId } from '../types';
+import type { BasicTreeItem, ChildrenIndexMap, TreeData, TreeItemId } from '../types';
 
 interface FlattenedTreeItem<CustomData> {
   item: CustomData;
@@ -7,6 +7,8 @@ interface FlattenedTreeItem<CustomData> {
   parentId: TreeItemId | null;
   isLastTreeInSameDepth: boolean;
   completeDepthHashTable: Record<number, true>;
+  flatIndex: number;
+  childIndex: number;
 }
 
 interface StackItem {
@@ -15,11 +17,13 @@ interface StackItem {
   parentId: TreeItemId | null;
   isLastTreeInSameDepth: boolean;
   completeDepthHashTable: Record<number, true>;
+  childIndex: number;
 }
 
 /** @description Flatten the tree into an array for rendering. */
 export function flattenTree<CustomData extends BasicTreeItem>(
-  tree: TreeData<CustomData>
+  tree: TreeData<CustomData>,
+  childrenIndexMap: ChildrenIndexMap
 ): FlattenedTreeItem<CustomData>[] {
   const initialDepth: number = 0;
   const initialCompleteDepthHashTable: Record<number, true> = {};
@@ -31,17 +35,21 @@ export function flattenTree<CustomData extends BasicTreeItem>(
   // NOTE: Add initial root items to the stack
   // NOTE: Add in reverse order to maintain order
   for (let i = tree.rootIds.length - 1; i >= 0; i--) {
+    const rootId = tree.rootIds[i];
+    // Get childIndex from childrenIndexMap for root items (parent is null)
+    const childIndexValue = childrenIndexMap.get(null)!.get(rootId)!;
     stack.push({
-      id: tree.rootIds[i],
+      id: rootId,
       depth: initialDepth,
       completeDepthHashTable: initialCompleteDepthHashTable,
       parentId: initialParentId,
       isLastTreeInSameDepth: i === tree.rootIds.length - 1,
+      childIndex: childIndexValue,
     });
   }
 
   while (stack.length > 0) {
-    const { id, depth, completeDepthHashTable, parentId, isLastTreeInSameDepth } = stack.pop()!;
+    const { id, depth, completeDepthHashTable, parentId, isLastTreeInSameDepth, childIndex } = stack.pop()!;
     const item = tree.items[id];
 
     if (!item) {
@@ -58,6 +66,8 @@ export function flattenTree<CustomData extends BasicTreeItem>(
       isLastTreeInSameDepth,
       parentId,
       completeDepthHashTable,
+      flatIndex: flattenedItems.length,
+      childIndex,
     });
 
     if (item.isOpened && item.children?.length > 0) {
@@ -76,13 +86,17 @@ export function flattenTree<CustomData extends BasicTreeItem>(
 
       // NOTE: Add in reverse order to maintain order
       for (let i = item.children.length - 1; i >= 0; i--) {
-        if (tree.items[item.children[i]]) {
+        const childId = item.children[i];
+        if (tree.items[childId]) {
+          // Get childIndex from childrenIndexMap for O(1) lookup
+          const childIndexValue = childrenIndexMap.get(item.id)!.get(childId)!;
           stack.push({
-            id: item.children[i],
+            id: childId,
             depth: depth + 1,
             completeDepthHashTable: newCompleteDepthHashTable,
             parentId: item.id,
             isLastTreeInSameDepth: i === item.children.length - 1,
+            childIndex: childIndexValue,
           });
         }
       }
