@@ -7,6 +7,7 @@ import { buildChildrenIndexMap } from './utils/buildChildrenIndexMap';
 import { buildParentMap } from './utils/buildParentMap';
 import { insertTreeItem } from './utils/insertTreeItem';
 import { removeTreeItem } from './utils/removeTreeItem';
+import { moveTreeItem } from './utils/moveTreeItem';
 
 // Helper function to extract opened IDs from tree items
 const extractOpenedIds = <T extends BasicTreeItem>(items: Record<TreeItemId, T>): Set<TreeItemId> => {
@@ -130,6 +131,20 @@ export const useTreeState = <CustomData extends BasicTreeItem>({
     [parentMap]
   );
 
+  const moveItem = useCallback(
+    (sourceId: TreeItemId, target: Parameters<typeof moveTreeItem>[0]['target']) => {
+      setBasicTree((prev) =>
+        moveTreeItem({
+          tree: prev,
+          parentMap,
+          sourceId,
+          target,
+        })
+      );
+    },
+    [parentMap]
+  );
+
   useDidUpdate(() => {
     if (options?.syncWithInitialTree) {
       setOpenedIds(extractOpenedIds(initialTree.items));
@@ -148,5 +163,6 @@ export const useTreeState = <CustomData extends BasicTreeItem>({
     closeAll,
     insertItem,
     removeItem,
+    moveItem,
   };
 };
