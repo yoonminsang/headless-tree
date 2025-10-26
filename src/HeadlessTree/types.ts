@@ -59,6 +59,20 @@ export interface TreeOptions {
    * However, memoization handling such as useState, useMemo, select, etc. is required for use.
    */
   syncWithInitialTree?: boolean;
+  /**
+   * Initial set of opened item IDs.
+   * If provided, this takes precedence over isOpened flags in tree items.
+   * This is useful for separating tree structure data from UI state.
+   *
+   * @example
+   * ```tsx
+   * <Tree
+   *   initialTree={treeData}
+   *   options={{ initialOpenedIds: ['1', '2', '3'] }}
+   * />
+   * ```
+   */
+  initialOpenedIds?: TreeItemId[];
 }
 
 export interface TreeProps<CustomData extends BasicTreeItem> {
