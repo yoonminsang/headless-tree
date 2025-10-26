@@ -26,7 +26,13 @@ export const useTreeState = <CustomData extends BasicTreeItem>({
   options,
 }: Pick<TreeProps<CustomData>, 'initialTree' | 'options'>) => {
   const [baseTree, setBasicTree] = useState<TreeData<CustomData>>(initialTree);
-  const [openedIds, setOpenedIds] = useState<Set<TreeItemId>>(() => extractOpenedIds(initialTree.items));
+  const [openedIds, setOpenedIds] = useState<Set<TreeItemId>>(() => {
+    // initialOpenedIds takes precedence over isOpened flags in tree items
+    if (options?.initialOpenedIds) {
+      return new Set(options.initialOpenedIds);
+    }
+    return extractOpenedIds(initialTree.items);
+  });
 
   const parentMap = useMemo<ParentMap>(() => buildParentMap(baseTree), [baseTree]);
   const childrenIndexMap = useMemo<ChildrenIndexMap>(() => buildChildrenIndexMap(baseTree), [baseTree]);
@@ -147,10 +153,15 @@ export const useTreeState = <CustomData extends BasicTreeItem>({
 
   useDidUpdate(() => {
     if (options?.syncWithInitialTree) {
-      setOpenedIds(extractOpenedIds(initialTree.items));
+      // Sync openedIds: prioritize initialOpenedIds if provided, otherwise extract from tree items
+      if (options?.initialOpenedIds) {
+        setOpenedIds(new Set(options.initialOpenedIds));
+      } else {
+        setOpenedIds(extractOpenedIds(initialTree.items));
+      }
       setBasicTree(initialTree);
     }
-  }, [initialTree, options?.syncWithInitialTree]);
+  }, [initialTree, options?.syncWithInitialTree, options?.initialOpenedIds]);
 
   return {
     tree,

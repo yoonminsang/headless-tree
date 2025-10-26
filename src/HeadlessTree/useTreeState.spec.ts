@@ -257,6 +257,93 @@ describe('useTreeState', () => {
     });
   });
 
+  describe('initialOpenedIds option', () => {
+    it('should use initialOpenedIds instead of isOpened flags when provided', () => {
+      const tree = createTree({
+        rootIds: ['1', '2', '3'],
+        items: {
+          '1': createTreeItem('1', { isOpened: false }), // isOpened is false
+          '2': createTreeItem('2', { isOpened: true }), // isOpened is true
+          '3': createTreeItem('3'), // no isOpened
+        },
+      });
+
+      const { result } = renderHook(() =>
+        useTreeState({
+          initialTree: tree,
+          options: { initialOpenedIds: ['1', '3'] }, // Only 1 and 3 should be opened
+        })
+      );
+
+      // initialOpenedIds takes precedence
+      expect(result.current.tree.items['1'].isOpened).toBe(true); // opened by initialOpenedIds
+      expect(result.current.tree.items['2'].isOpened).toBe(false); // not in initialOpenedIds
+      expect(result.current.tree.items['3'].isOpened).toBe(true); // opened by initialOpenedIds
+    });
+
+    it('should fall back to isOpened flags when initialOpenedIds is not provided', () => {
+      const tree = createTree({
+        rootIds: ['1', '2'],
+        items: {
+          '1': createTreeItem('1', { isOpened: true }),
+          '2': createTreeItem('2', { isOpened: false }),
+        },
+      });
+
+      const { result } = renderHook(() =>
+        useTreeState({
+          initialTree: tree,
+          options: {}, // no initialOpenedIds
+        })
+      );
+
+      // Should use isOpened flags from tree items
+      expect(result.current.tree.items['1'].isOpened).toBe(true);
+      expect(result.current.tree.items['2'].isOpened).toBe(false);
+    });
+
+    it('should handle empty initialOpenedIds array', () => {
+      const tree = createTree({
+        rootIds: ['1', '2'],
+        items: {
+          '1': createTreeItem('1', { isOpened: true }),
+          '2': createTreeItem('2', { isOpened: true }),
+        },
+      });
+
+      const { result } = renderHook(() =>
+        useTreeState({
+          initialTree: tree,
+          options: { initialOpenedIds: [] }, // explicitly empty
+        })
+      );
+
+      // All should be closed because initialOpenedIds is empty
+      expect(result.current.tree.items['1'].isOpened).toBe(false);
+      expect(result.current.tree.items['2'].isOpened).toBe(false);
+    });
+
+    it('should ignore non-existent IDs in initialOpenedIds', () => {
+      const tree = createTree({
+        rootIds: ['1'],
+        items: {
+          '1': createTreeItem('1'),
+        },
+      });
+
+      const { result } = renderHook(() =>
+        useTreeState({
+          initialTree: tree,
+          options: { initialOpenedIds: ['1', 'non-existent', '999'] },
+        })
+      );
+
+      // Only '1' should be opened, non-existent IDs are ignored
+      expect(result.current.tree.items['1'].isOpened).toBe(true);
+      // Should not throw error for non-existent IDs
+    });
+  });
+
   describe('syncWithInitialTree option', () => {
     it('should sync with initialTree when option is true', () => {
       const initialTree = createBasicTree();
@@ -323,6 +410,38 @@ describe('useTreeState', () => {
       // Should maintain existing state since syncWithInitialTree is false
       expect(result.current.tree.items['1'].isOpened).toBe(true);
     });
+
+    it('should sync initialOpenedIds when both syncWithInitialTree and initialOpenedIds are used', () => {
+      const tree = createTree({
+        rootIds: ['1', '2'],
+        items: {
+          '1': createTreeItem('1'),
+          '2': createTreeItem('2'),
+        },
+      });
+
+      const { result, rerender } = renderHook(
+        ({ openedIds }: { openedIds: string[] }) =>
+          useTreeState({
+            initialTree: tree,
+            options: {
+              syncWithInitialTree: true,
+              initialOpenedIds: openedIds,
+            },
+          }),
+        { initialProps: { openedIds: ['1'] } }
+      );
+
+      expect(result.current.tree.items['1'].isOpened).toBe(true);
+      expect(result.current.tree.items['2'].isOpened).toBe(false);
+
+      // Change initialOpenedIds
+      rerender({ openedIds: ['2'] });
+
+      // Should sync with new initialOpenedIds
+      expect(result.current.tree.items['1'].isOpened).toBe(false);
+      expect(result.current.tree.items['2'].isOpened).toBe(true);
+    });
   });
 
   it('should return stable callback references', () => {
@@ -386,6 +505,46 @@ describe('useTreeState', () => {
       expect(result.current.tree.items['c'].isOpened).toBe(true);
       expect(result.current.tree.items['a'].isOpened).toBe(false);
       expect(result.current.tree.items['root2'].isOpened).toBe(false);
+    });
+  });
+
+  describe('isOpened initialization edge cases', () => {
+    it('should correctly handle mixed isOpened states (undefined, true, false)', () => {
+      const tree = createTree({
+        rootIds: ['1', '2', '3'],
+        items: {
+          '1': createTreeItem('1', { isOpened: true }),
+          '2': createTreeItem('2', { isOpened: false }),
+          '3': createTreeItem('3'), // isOpened is undefined
+        },
+      });
+
+      const { result } = renderHook(() => useTreeState({ initialTree: tree }));
+
+      // isOpened: true should remain true
+      expect(result.current.tree.items['1'].isOpened).toBe(true);
+      // isOpened: false should remain false
+      expect(result.current.tree.items['2'].isOpened).toBe(false);
+      // isOpened: undefined should become false (not in openedIds set)
+      expect(result.current.tree.items['3'].isOpened).toBe(false);
+    });
+
+    it('should verify extractOpenedIds only adds explicitly opened items', () => {
+      const tree = createTree({
+        rootIds: ['1'],
+        items: {
+          '1': createTreeItem('1', { children: ['2', '3'], isOpened: false }),
+          '2': createTreeItem('2'), // undefined
+          '3': createTreeItem('3', { isOpened: true }),
+        },
+      });
+
+      const { result } = renderHook(() => useTreeState({ initialTree: tree }));
+
+      // Only item '3' with isOpened: true should be in the opened state
+      expect(result.current.tree.items['1'].isOpened).toBe(false);
+      expect(result.current.tree.items['2'].isOpened).toBe(false);
+      expect(result.current.tree.items['3'].isOpened).toBe(true);
     });
   });
 

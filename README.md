@@ -225,11 +225,13 @@ const {
 ```
 
 **State Management:**
+
 - `tree` - Current tree data with merged open/close state
 - `parentMap` - Map for O(1) parent lookup performance
 - `childrenIndexMap` - Map for tracking child positions
 
 **Open/Close Operations:**
+
 - `open(id)` - Open a specific tree item
 - `close(id)` - Close a specific tree item
 - `toggleOpen(id)` - Toggle open/close state of an item
@@ -237,6 +239,7 @@ const {
 - `closeAll()` - Collapse all tree items
 
 **Tree Manipulation:**
+
 - `insertItem(parentId, newItem, position)` - Insert a new item into the tree
 - `removeItem(itemId)` - Remove an item and all its descendants
 - `moveItem(sourceId, target)` - Move an item to a new position
@@ -259,6 +262,7 @@ const isValid = canMoveItem(tree, sourceId, targetId);
 ```
 
 Validates whether a tree item can be moved to a target position. Returns `false` if:
+
 - Source and target are the same item
 - Target is a descendant of source (prevents circular references)
 
@@ -287,6 +291,7 @@ const treeRef = useRef<TreeRef<YourDataType>>(null);
 ```
 
 Provides access to:
+
 - `tree` - Current tree data
 - `parentMap` - Parent lookup map
 - `childrenIndexMap` - Children index map
@@ -306,6 +311,7 @@ const treeRef = useRef<VirtualizedTreeRef<YourDataType>>(null);
 ```
 
 Includes all TreeRef methods plus:
+
 - `virtualizer` - Access to the underlying virtualizer instance
 
 ## Advanced Usage
@@ -321,11 +327,11 @@ insertItem(parentId, newItem, 2); // Insert at index 2
 
 // Insert at predefined positions
 insertItem(parentId, newItem, 'first'); // Insert at the beginning
-insertItem(parentId, newItem, 'last');  // Insert at the end
+insertItem(parentId, newItem, 'last'); // Insert at the end
 
 // Insert relative to existing items
 insertItem(parentId, newItem, { before: 'item-id' }); // Insert before an item
-insertItem(parentId, newItem, { after: 'item-id' });  // Insert after an item
+insertItem(parentId, newItem, { after: 'item-id' }); // Insert after an item
 
 // Insert at root level (parentId = null)
 insertItem(null, newItem, 'last'); // Add to root level
