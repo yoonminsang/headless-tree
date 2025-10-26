@@ -80,10 +80,13 @@ jobs:
 
           # Get commits since last tag (or all commits if no previous tag)
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          # Get commits excluding version bump commits
+          # Patterns to exclude: "version", "bump", "release", etc.
           if [ -z "$LAST_TAG" ]; then
-            COMMITS=$(git log --pretty=format:"- %s" --reverse)
+            COMMITS=$(git log --pretty=format:"%s" --reverse | grep -v -E "^(version|bump|release|v?[0-9]+\.[0-9]+\.[0-9]+)" | sed 's/^/- /' || echo "- Initial release")
           else
-            COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"- %s" --reverse)
+            COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"%s" --reverse | grep -v -E "^(version|bump|release|v?[0-9]+\.[0-9]+\.[0-9]+)" | sed 's/^/- /' || echo "- Minor updates")
           fi
 
           # Create release notes
@@ -94,6 +97,10 @@ jobs:
 
           **Full Changelog**: https://github.com/${{ github.repository }}/compare/${LAST_TAG}...${VERSION}
           EOF
+
+          echo "=== Generated Release Notes ==="
+          cat release_notes.md
+          echo "=== End Release Notes ==="
 
           echo "release_notes_file=release_notes.md" >> $GITHUB_OUTPUT
 
