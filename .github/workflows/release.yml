@@ -52,7 +52,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 100 # for get github tag
+          fetch-depth: 0 # Need full history to find tags
+
+      - name: Fetch tags
+        run: git fetch --tags --force
 
       - name: Enable Corepack
         run: corepack enable
