@@ -166,7 +166,8 @@ export const DeepNesting: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'A deeply nested tree structure to test drag and drop with multiple nesting levels and complex hierarchies.',
+        story:
+          'A deeply nested tree structure to test drag and drop with multiple nesting levels and complex hierarchies.',
       },
     },
   },

@@ -135,9 +135,7 @@ const DndTreeItem: React.FC<DndTreeItemProps> = ({
 
       <div
         style={
-          showIndicator && dropPosition === 'inside'
-            ? DROP_INSIDE_STYLE
-            : { transition: 'background-color 0.15s' }
+          showIndicator && dropPosition === 'inside' ? DROP_INSIDE_STYLE : { transition: 'background-color 0.15s' }
         }
       >
         <TreeItemRenderer
@@ -201,7 +199,11 @@ export const DndTree: React.FC<DndTreeProps> = ({ initialTree }) => {
     });
   };
 
-  const getTargetIndex = (tree: TreeData<BasicTreeItem<FileItem>>, targetId: TreeItemId, parentId: TreeItemId | null | undefined): number => {
+  const getTargetIndex = (
+    tree: TreeData<BasicTreeItem<FileItem>>,
+    targetId: TreeItemId,
+    parentId: TreeItemId | null | undefined
+  ): number => {
     if (parentId !== null && parentId !== undefined) {
       const parent = tree.items[parentId];
       return parent.children.indexOf(targetId);

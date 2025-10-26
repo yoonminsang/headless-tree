@@ -24,7 +24,7 @@ jobs:
         id: release-notes
         run: |
           VERSION="v${{ github.event.inputs.version }}"
-          
+
           # Get commits since last tag (or all commits if no previous tag)
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -z "$LAST_TAG" ]; then
@@ -32,16 +32,16 @@ jobs:
           else
             COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"- %s" --reverse)
           fi
-          
+
           # Create release notes
           cat > release_notes.md << EOF
           ## What's Changed
-          
+
           $COMMITS
-          
+
           **Full Changelog**: https://github.com/${{ github.repository }}/compare/${LAST_TAG}...${VERSION}
           EOF
-          
+
           echo "=== Generated Release Notes ==="
           cat release_notes.md
           echo "=== End Release Notes ==="
