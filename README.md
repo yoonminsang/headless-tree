@@ -176,7 +176,10 @@ Basic tree component for standard use cases.
 ```tsx
 <Tree
   initialTree={treeData}
-  options={{ syncWithInitialTree?: boolean }}
+  options={{
+    syncWithInitialTree?: boolean
+    initialOpenedIds?: TreeItemId[]
+  }}
   renderItem={(params: RenderItemParams) => ReactNode}
 />
 ```
@@ -191,7 +194,10 @@ Virtualized tree component for large datasets.
   height={number | string}
   estimateSize={(index: number) => number}
   overscan={number}
-  options={{ syncWithInitialTree?: boolean }}
+  options={{
+    syncWithInitialTree?: boolean
+    initialOpenedIds?: TreeItemId[]
+  }}
   renderItem={(params: RenderItemParams) => ReactNode}
   // ... any div props (className, style, etc.)
 />
@@ -203,6 +209,34 @@ Virtualized tree component for large datasets.
 - `estimateSize` - Function returning estimated height of each item
 - `overscan` - Number of items to render outside visible area (default: 5)
 - All standard HTML div props are supported
+
+### Options
+
+Both `Tree` and `VirtualizedTree` accept an `options` prop with the following configuration:
+
+#### syncWithInitialTree
+
+If `true`, synchronizes the tree with `initialTree` whenever `initialTree` changes. Useful when tree data needs to be modified from outside the tree component. However, memoization handling such as `useState`, `useMemo`, `select`, etc. is required for use.
+
+```tsx
+<Tree
+  initialTree={treeData}
+  options={{ syncWithInitialTree: true }}
+  renderItem={...}
+/>
+```
+
+#### initialOpenedIds
+
+Initial set of opened item IDs. If provided, this takes precedence over `isOpened` flags in tree items. This is useful for separating tree structure data from UI state.
+
+```tsx
+<Tree
+  initialTree={treeData}
+  options={{ initialOpenedIds: ['1', '2', '3'] }}
+  renderItem={...}
+/>
+```
 
 ### Hooks
 
